@@ -66,7 +66,56 @@ def calculate_retention_offer(customer_tier: str, reason: str) -> dict:
         offers = []
         authorization_info = rules.get("authorization_levels", {})
 
-
+        # Get offers based on category
+        if category == "financial_hardship":
+            # Financial hardship is organized by customer type
+            category_data = rules.get("financial_hardship", {})
+            raw_offers = category_data.get(customer_type, [])
+            
+            for offer in raw_offers:
+                offers.append({
+                    "type": offer.get("type"),
+                    "description": offer.get("description"),
+                    "details": _format_offer_details(offer),
+                    "authorization": offer.get("authorization", "agent")
+                })
+        
+        elif category == "product_issues":
+            # Product issues organized by issue type
+            category_data = rules.get("product_issues", {})
+            raw_offers = category_data.get(sub_category, [])
+            
+            for offer in raw_offers:
+                offers.append({
+                    "type": offer.get("type"),
+                    "description": offer.get("description"),
+                    "details": _format_offer_details(offer),
+                    "authorization": offer.get("authorization", "agent")
+                })
+        
+        elif category == "service_value":
+            # Service value - use care_plus_premium offers
+            category_data = rules.get("service_value", {})
+            raw_offers = category_data.get("care_plus_premium", [])
+            
+            for offer in raw_offers:
+                if offer.get("type") == "explain_benefits":
+                    # Special handling for benefits explanation
+                    benefits = offer.get("benefits", [])
+                    offers.append({
+                        "type": "explain_benefits",
+                        "description": "Explain the value of their current plan",
+                        "details": "Benefits: " + "; ".join(benefits),
+                        "authorization": "agent"
+                    })
+                else:
+                    offers.append({
+                        "type": offer.get("type"),
+                        "description": offer.get("description", ""),
+                        "details": _format_offer_details(offer),
+                        "authorization": offer.get("authorization", "agent")
+                    })
+        
         agent_limits = authorization_info.get("agent", {})
 
         return {
@@ -145,9 +194,10 @@ def _get_default_offers(tier: str, reason: str) -> dict:
 
 def _get_recommendation(category: str, sub_category: Optional[str]) -> str:
     recommendations = {
-        "financial_hardship": "Start with empathy about their financial situation.",
+        "financial_hardship": "Start with empathy about their financial situation. Offer the pause option first (no commitment), then discuss discounts if they prefer to keep service active.",
         "product_issues": {
-
+            "overheating": "Apologize for the device issue. Offer free replacement immediately - this often resolves the cancellation. If they still want to cancel after replacement offered, don't push.",
+            "battery_issues": "Offer free battery replacement first. This is usually a quick fix that saves the customer relationship."
         },
         "service_value": "Don't be defensive. Walk them through the specific benefits and their value. The explain_benefits offer lists concrete savings. If they are still unsure, offer the trial extension with refund promise."
     }
