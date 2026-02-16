@@ -10,7 +10,6 @@ from typing import Optional
 from langchain_core.tools import tool
 
 # Path to data directory
-
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 @tool

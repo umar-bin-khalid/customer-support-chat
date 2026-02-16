@@ -168,8 +168,6 @@ Respond with just the category name."""),
             "offers_made": str(offers_made) if offers_made else "None yet"
         })
         
-        # TODO: Parse response to extract any offers made
-        # For now, return response without offer tracking
         return response, None
 
 

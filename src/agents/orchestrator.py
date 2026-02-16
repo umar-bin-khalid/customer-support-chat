@@ -12,7 +12,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from src.tools.customer_tools import get_customer_data
-from src.rag.vectorstore import search_policies
 
 
 class IntentClassification(BaseModel):
