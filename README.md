@@ -167,19 +167,6 @@ Processes account changes:
 - Actions: cancel, pause, downgrade, retain
 - Logs to `customer_actions.log`
 
-## Customization
-
-### Replace Sample Data
-Download the actual data files from the assignment and replace:
-- `data/customers.csv`
-- `data/retention_rules.json`
-- `data/policies/*.md`
-
-Then rebuild the vectorstore:
-```bash
-python main.py --build-vectorstore
-```
-
 ### Switch LLM Provider
 Edit `.env`:
 ```
