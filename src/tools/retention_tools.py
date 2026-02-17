@@ -51,6 +51,16 @@ def _map_tier_to_customer_type(tier: str) -> str:
 
 @tool("calculate_retention_offer", return_direct=False)
 def calculate_retention_offer(customer_tier: str, reason: str) -> dict:
+    """
+    Generate personalized retention offers based on customer tier and cancellation reason.
+    
+    Args:
+        customer_tier: Customer's tier level (e.g., "gold", "silver", "standard", "premium")
+        reason: The reason for cancellation (e.g., "cost", "can't afford", "overheating", "not using")
+        
+    Returns:
+        dict with available retention offers and recommendations
+    """
     rules_path = DATA_DIR / "retention_rules.json"
 
     if not rules_path.exists():

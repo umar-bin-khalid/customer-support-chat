@@ -14,9 +14,10 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 @tool("get_customer_data", return_direct=False)
 def get_customer_data(email: str) -> dict:
+    """Load customer profile from customers.csv by email address."""
     csv_path = DATA_DIR / "customers.csv"
 
-    if not csv_path:
+    if not csv_path.exists():
         return {"error": "Customer database not found", "email": email}
     
     try:
@@ -51,6 +52,7 @@ def get_customer_data(email: str) -> dict:
 
 @tool("update_customer_status", return_direct=False)
 def update_customer_status(customer_id: str, action: str, reason: Optional[str] = None) -> dict:
+    """Process cancellations or status changes. Logs the action to a file."""
     valid_actions = ["cancel", "pause", "downgrade", "retain", "upgrade"]
 
     if action.lower() not in valid_actions:
