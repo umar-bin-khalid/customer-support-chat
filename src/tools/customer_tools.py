@@ -4,7 +4,7 @@ These tools interact with customer data from CSV files.
 """
 import csv
 import json
-from datatime import datatime
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from langchain_core.tools import tool
@@ -12,7 +12,7 @@ from langchain_core.tools import tool
 # Path to data directory
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
-@tool
+@tool("get_customer_data", return_direct=False)
 def get_customer_data(email: str) -> dict:
     csv_path = DATA_DIR / "customers.csv"
 
@@ -49,7 +49,7 @@ def get_customer_data(email: str) -> dict:
         return {"error": f"Error reading customer data: {str(e)}"}
     
 
-@tool
+@tool("update_customer_status", return_direct=False)
 def update_customer_status(customer_id: str, action: str, reason: Optional[str] = None) -> dict:
     valid_actions = ["cancel", "pause", "downgrade", "retain", "upgrade"]
 
@@ -62,7 +62,7 @@ def update_customer_status(customer_id: str, action: str, reason: Optional[str] 
     log_path = DATA_DIR / "customer_actions.log"
 
     try:
-        timestamp = datatime.now().isoformat()
+        timestamp = datetime.now().isoformat()
         log_entry = {
             "timestamp": timestamp,
             "customer_id": customer_id,
@@ -72,7 +72,7 @@ def update_customer_status(customer_id: str, action: str, reason: Optional[str] 
         }
 
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry), "\n")
+            f.write(json.dumps(log_entry) + "\n")
         
         action_messages = {
             "cancel": f"Cancellation processed for customer {customer_id}. Service will end at billing cycle.",

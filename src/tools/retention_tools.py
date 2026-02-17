@@ -49,7 +49,7 @@ def _map_tier_to_customer_type(tier: str) -> str:
     return tier_mapping.get(tier_lower, "regular_customers")
 
 
-@tool
+@tool("calculate_retention_offer", return_direct=False)
 def calculate_retention_offer(customer_tier: str, reason: str) -> dict:
     rules_path = DATA_DIR / "retention_rules.json"
 
