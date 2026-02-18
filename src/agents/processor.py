@@ -60,10 +60,9 @@ class ProcessorAgent:
     The Processor - handles final cancellation processing.
     """
     
-    def __init__(self, llm: ChatGoogleGenerativeAI):
+    def __init__(self, llm):
         self.llm = llm
         self.tools = [update_customer_status]
-        self.llm_with_tools = llm.bind_tools(self.tools)
         
     def process_cancellation(self, customer_id: str, reason: str) -> dict:
         """
@@ -113,7 +112,7 @@ class ProcessorAgent:
             ("human", "{message}")
         ])
         
-        chain = prompt | self.llm_with_tools | StrOutputParser()
+        chain = prompt | self.llm | StrOutputParser()
         
         response = chain.invoke({
             "message": message,

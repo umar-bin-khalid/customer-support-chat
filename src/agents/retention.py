@@ -43,11 +43,6 @@ RULES:
 - Never be pushy or guilt-trip
 - If they say "just cancel" twice, respect their decision and route to processor
 - Always use customer data to personalize offers
-- Query policies when you need accurate information
-
-Available tools:
-- get_customer_data: Look up customer information
-- calculate_retention_offer: Get personalized retention offers
 
 Customer information:
 {customer_context}
@@ -65,10 +60,9 @@ class RetentionAgent:
     The Problem Solver - handles retention conversations.
     """
     
-    def __init__(self, llm: ChatGoogleGenerativeAI):
+    def __init__(self, llm):
         self.llm = llm
         self.tools = [get_customer_data, calculate_retention_offer]
-        self.llm_with_tools = llm.bind_tools(self.tools)
         self.offers_made = []
         
     def detect_cancellation_reason(self, message: str, chat_history: str) -> str:
@@ -134,6 +128,7 @@ Respond with just the category name."""),
         try:
             docs = search_policies(query, k=2)
             context = "\n\n".join([doc.page_content for doc in docs])
+            context = context.replace("{", "{{",).replace("}", "}}")
             return context[:1000]  # Limit context size
         except Exception as e:
             return f"Policy lookup unavailable: {e}"
@@ -152,14 +147,14 @@ Respond with just the category name."""),
             Tuple of (response_text, offer_made_or_none)
         """
         # Get relevant policy context
-        policy_context = self.get_policy_context(message)
+        # policy_context = self.get_policy_context(message)
         
         prompt = ChatPromptTemplate.from_messages([
-            ("system", RETENTION_SYSTEM_PROMPT + f"\n\nRelevant policy information:\n{policy_context}"),
+            ("system", RETENTION_SYSTEM_PROMPT ),
             ("human", "{message}")
         ])
         
-        chain = prompt | self.llm_with_tools | StrOutputParser()
+        chain = prompt | self.llm | StrOutputParser()
         
         response = chain.invoke({
             "message": message,

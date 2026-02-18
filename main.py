@@ -36,8 +36,8 @@ def run_chat():
     load_dotenv()
     
     # Verify API key
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("❌ Error: GOOGLE_API_KEY not found in environment")
+    if not os.getenv("GROQ_API_KEY"):
+        print("❌ Error: GROQ_API_KEY not found in environment")
         print("Please create a .env file with your Google API key")
         print("See .env.example for reference")
         return

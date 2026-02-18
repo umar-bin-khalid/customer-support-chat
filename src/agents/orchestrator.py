@@ -68,10 +68,9 @@ class OrchestratorAgent:
     Handles initial customer contact and routes to appropriate specialist.
     """
     
-    def __init__(self, llm: ChatGoogleGenerativeAI):
+    def __init__(self, llm):
         self.llm = llm
         self.tools = [get_customer_data]
-        self.llm_with_tools = llm.bind_tools(self.tools)
         
     def classify_intent(self, message: str, context: str = "") -> IntentClassification:
         """
@@ -114,7 +113,7 @@ Respond with JSON: {{"intent": "...", "confidence": 0.X, "reasoning": "..."}}"""
             ("human", "{message}")
         ])
         
-        chain = prompt | self.llm_with_tools | StrOutputParser()
+        chain = prompt | self.llm | StrOutputParser()
         
         response = chain.invoke({
             "message": message,

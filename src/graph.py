@@ -30,9 +30,16 @@ class ChatState(TypedDict):
 
 def create_llm() -> ChatGoogleGenerativeAI:
     """Create the LLM instance based on environment configuration."""
-    provider = os.getenv("LLM_PROVIDER", "gemini")
+    provider = os.getenv("LLM_PROVIDER", "groq")
     
-    if provider == "gemini":
+    if provider == "groq":
+        from langchain_groq import ChatGroq
+        return ChatGroq(
+            model="llama-3.1-8b-instant",
+            api_key=os.getenv("GROQ_API_KEY"),
+            temperature=0.7
+        )
+    elif provider == "gemini":
         return ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             google_api_key=os.getenv("GOOGLE_API_KEY"),
@@ -60,10 +67,7 @@ def create_workflow():
     5. Loop until conversation ends
     """
     raw_llm = create_llm()
-    llm = raw_llm.with_retry(
-        stop_after_attempt=3,
-        wait_exponential_jitter=True,
-    )
+    llm = raw_llm
     # Create agents
     orchestrator = create_orchestrator_agent(llm)
     retention = create_retention_agent(llm)
