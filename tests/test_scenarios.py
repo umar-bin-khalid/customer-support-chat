@@ -84,7 +84,7 @@ class TestIntentClassification:
         from src.agents.orchestrator import create_orchestrator_agent
         from langchain_google_genai import ChatGoogleGenerativeAI
         
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         orchestrator = create_orchestrator_agent(llm)
         
         result = orchestrator.classify_intent(
@@ -97,7 +97,7 @@ class TestIntentClassification:
         from src.agents.orchestrator import create_orchestrator_agent
         from langchain_google_genai import ChatGoogleGenerativeAI
         
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
         orchestrator = create_orchestrator_agent(llm)
         
         result = orchestrator.classify_intent(
