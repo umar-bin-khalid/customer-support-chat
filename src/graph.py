@@ -3,6 +3,7 @@ LangGraph workflow for the customer support chat system.
 Orchestrates the three agents and manages conversation state.
 """
 import os
+import time
 from typing import Annotated, Literal, TypedDict, List, Optional
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
@@ -27,13 +28,40 @@ class ChatState(TypedDict):
     conversation_ended: bool
 
 
+class RetryLLM:
+    """Wrapper around ChatGoogleGenerativeAI that retries on rate limit errors."""
+    
+    def __init__(self, llm: ChatGoogleGenerativeAI, max_retries: int = 3):
+        self._llm = llm
+        self._max_retries = max_retries
+    
+    def __getattr__(self, name):
+        attr = getattr(self._llm, name)
+        if name == "invoke":
+            return self._retry_invoke
+        return attr
+    
+    def _retry_invoke(self, *args, **kwargs):
+        for attempt in range(self._max_retries):
+            try:
+                return self._llm.invoke(*args, **kwargs)
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    wait = 15 * (attempt + 1)
+                    print(f"\n⏳ Rate limited. Waiting {wait}s before retry ({attempt+1}/{self._max_retries})...")
+                    time.sleep(wait)
+                else:
+                    raise
+        return self._llm.invoke(*args, **kwargs)
+
+
 def create_llm() -> ChatGoogleGenerativeAI:
     """Create the LLM instance based on environment configuration."""
     provider = os.getenv("LLM_PROVIDER", "gemini")
     
     if provider == "gemini":
         return ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             temperature=0.7
         )
@@ -56,7 +84,8 @@ def create_workflow():
        - retention failed → Processor Agent
     5. Loop until conversation ends
     """
-    llm = create_llm()
+    raw_llm = create_llm()
+    llm = RetryLLM(raw_llm)  # Wrap with retry logic for rate limits
     
     # Create agents
     orchestrator = create_orchestrator_agent(llm)
