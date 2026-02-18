@@ -9,6 +9,7 @@ Responsibilities:
 from typing import Optional
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from src.tools.customer_tools import get_customer_data
@@ -62,6 +63,7 @@ class RetentionAgent:
     
     def __init__(self, llm):
         self.llm = llm
+        # Tools are called directly, not via LLM tool binding
         self.tools = [get_customer_data, calculate_retention_offer]
         self.offers_made = []
         
@@ -128,7 +130,8 @@ Respond with just the category name."""),
         try:
             docs = search_policies(query, k=2)
             context = "\n\n".join([doc.page_content for doc in docs])
-            context = context.replace("{", "{{",).replace("}", "}}")
+            # Escape curly braces to prevent LangChain template issues
+            context = context.replace("{", "{{").replace("}", "}}")
             return context[:1000]  # Limit context size
         except Exception as e:
             return f"Policy lookup unavailable: {e}"
@@ -146,24 +149,25 @@ Respond with just the category name."""),
         Returns:
             Tuple of (response_text, offer_made_or_none)
         """
-        # Get relevant policy context
-        # policy_context = self.get_policy_context(message)
+        # RAG: Retrieve relevant policy documents
+        policy_context = self.get_policy_context(message)
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", RETENTION_SYSTEM_PROMPT ),
-            ("human", "{message}")
+        # Build the full system prompt with policy context injected safely
+        full_system_prompt = RETENTION_SYSTEM_PROMPT + "\n\nRelevant policy information:\n" + policy_context
+        
+        # Use from_template=False to avoid curly brace parsing in policy docs
+        from langchain_core.messages import SystemMessage
+        
+        response = self.llm.invoke([
+            SystemMessage(content=full_system_prompt.format(
+                customer_context=str(customer_context),
+                offers_made=str(offers_made) if offers_made else "None yet",
+                chat_history=chat_history,
+            )),
+            HumanMessage(content=message)
         ])
         
-        chain = prompt | self.llm | StrOutputParser()
-        
-        response = chain.invoke({
-            "message": message,
-            "chat_history": chat_history,
-            "customer_context": str(customer_context),
-            "offers_made": str(offers_made) if offers_made else "None yet"
-        })
-        
-        return response, None
+        return response.content, None
 
 
 def create_retention_agent(llm: ChatGoogleGenerativeAI) -> RetentionAgent:
