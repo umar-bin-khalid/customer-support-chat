@@ -44,15 +44,6 @@ RULES:
 - Never be pushy or guilt-trip
 - If they say "just cancel" twice, respect their decision and route to processor
 - Always use customer data to personalize offers
-
-Customer information:
-{customer_context}
-
-Offers already made this conversation:
-{offers_made}
-
-Conversation history:
-{chat_history}
 """
 
 
@@ -152,18 +143,19 @@ Respond with just the category name."""),
         # RAG: Retrieve relevant policy documents
         policy_context = self.get_policy_context(message)
         
-        # Build the full system prompt with policy context injected safely
-        full_system_prompt = RETENTION_SYSTEM_PROMPT + "\n\nRelevant policy information:\n" + policy_context
-        
-        # Use from_template=False to avoid curly brace parsing in policy docs
+        # Build system prompt by concatenation (no .format() to avoid curly brace issues)
         from langchain_core.messages import SystemMessage
         
+        system_content = (
+            RETENTION_SYSTEM_PROMPT
+            + "\nCustomer information:\n" + str(customer_context)
+            + "\n\nOffers already made this conversation:\n" + (str(offers_made) if offers_made else "None yet")
+            + "\n\nConversation history:\n" + chat_history
+            + "\n\nRelevant policy information (from RAG document retrieval):\n" + policy_context
+        )
+        
         response = self.llm.invoke([
-            SystemMessage(content=full_system_prompt.format(
-                customer_context=str(customer_context),
-                offers_made=str(offers_made) if offers_made else "None yet",
-                chat_history=chat_history,
-            )),
+            SystemMessage(content=system_content),
             HumanMessage(content=message)
         ])
         
